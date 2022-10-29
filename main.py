@@ -1,6 +1,9 @@
 from venv import create
 import pygame
 import random
+from queue import Queue
+
+from sklearn import neighbors
 pygame.init()
 
 WIDTH, HEIGHT = 600, 700
@@ -38,7 +41,7 @@ def get_neighbors(row, col, rows, cols):
     if row < rows -1 and col > 0:              #bot-left
         neighbors.append((row +1, col -1))
     if row > 0 and col < cols -1:              #bot-right
-        neighbors.append((row -1, col-1))
+        neighbors.append((row -1, col +1))
 
     return neighbors
     
@@ -98,6 +101,26 @@ def get_grid_pos(mouse_pos):
     
     return row, col
 
+def uncover_from_pos(row, col, cover_field, field):
+    q = Queue()
+    q.put((row, col))
+    visited = set()
+    
+    while not q.empty():
+        current = q.get()
+        
+        neighbors = get_neighbors(*current, ROWS, COLS)
+        for r, c in neighbors:
+            if (r, c) in visited:
+                continue
+            value = field[r][c]
+            cover_field[r][c] = 1
+            if value == 0:
+                q.put((r, c))
+                
+            visited.add((r, c))
+            
+
 def main():
     run = True
     field = create_minefield(ROWS,COLS, MINES)
@@ -114,6 +137,7 @@ def main():
                 if row >= ROWS or col >= COLS:
                     continue
                 cover_field[row][col] = 1
+                uncover_from_pos(row,col, cover_field, field)
             
         draw(window, field, cover_field)
     pygame.quit()
