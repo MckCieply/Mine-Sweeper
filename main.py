@@ -13,7 +13,7 @@ pygame.display.set_caption("MineSweeper")
 
 BG_COLOR = "white"
 ROWS, COLS = 15, 15
-MINES = 15
+BOMBS = 15
 SIZE = WIDTH / ROWS
 
 NUM_FONT = pygame.font.SysFont('comicsans', 20)
@@ -21,6 +21,7 @@ NUM_COLORS = {1: "black", 2: "green", 3: "red", 4: "orange",
               5: "yellow", 6: "purple", 7: "blue", 8: "pink"}
 RECT_COLOR = (200,200,200)
 CLICKED_RECT_COLOR = (140,140,140)
+FLAG_RECT_COLOR = "green"
 
 def get_neighbors(row, col, rows, cols):
     neighbors=[]
@@ -79,7 +80,12 @@ def draw(window, field, cover_field):
             x = SIZE * j
 
             is_covered = cover_field[i][j] == 0
-
+            is_flag = cover_field[i][j] == -2
+            if is_flag:
+                pygame.draw.rect(window, FLAG_RECT_COLOR, (x, y, SIZE, SIZE))
+                pygame.draw.rect(window, "black", (x, y, SIZE, SIZE), 1)
+                continue
+            
             if is_covered:
                 pygame.draw.rect(window, RECT_COLOR, (x, y, SIZE, SIZE))
                 pygame.draw.rect(window, "black", (x, y, SIZE, SIZE), 1)
@@ -123,9 +129,11 @@ def uncover_from_pos(row, col, cover_field, field):
 
 def main():
     run = True
-    field = create_minefield(ROWS,COLS, MINES)
+    field = create_minefield(ROWS,COLS, BOMBS)
     cover_field =[[0 for _ in range(COLS)] for _ in range(ROWS)]
-
+    flag_positions = set()
+    flags = BOMBS
+    
     while run:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -136,9 +144,18 @@ def main():
                 row, col = get_grid_pos(pygame.mouse.get_pos())
                 if row >= ROWS or col >= COLS:
                     continue
-                cover_field[row][col] = 1
-                uncover_from_pos(row,col, cover_field, field)
-            
+                mouse_pressed = pygame.mouse.get_pressed()
+                if mouse_pressed[0]:
+                    cover_field[row][col] = 1
+                    uncover_from_pos(row,col, cover_field, field)
+                elif mouse_pressed[2]:
+                    if cover_field[row][col] == -2:
+                        cover_field[row][col] = 0
+                        flags += 1
+                    else: 
+                        flags -= 1
+                        cover_field[row][col] = -2      
+                
         draw(window, field, cover_field)
     pygame.quit()
 
